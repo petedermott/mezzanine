@@ -1,7 +1,6 @@
 from django import forms
 from django_comments.forms import CommentSecurityForm, CommentForm
 from django_comments.signals import comment_was_posted
-from django.utils import six
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext, ugettext_lazy as _
 
@@ -34,7 +33,7 @@ class KeywordsWidget(forms.MultiWidget):
 
     class Media:
         js = (
-            'admin/js/jquery.init.js',
+            "admin/js/jquery.init.js",
             static("mezzanine/js/admin/keywords_field.js"),
         )
 
@@ -42,8 +41,7 @@ class KeywordsWidget(forms.MultiWidget):
         """
         Setup the text and hidden form field widgets.
         """
-        widgets = (forms.HiddenInput,
-                   forms.TextInput(attrs={"class": "vTextField"}))
+        widgets = (forms.HiddenInput, forms.TextInput(attrs={"class": "vTextField"}))
         super(KeywordsWidget, self).__init__(widgets, attrs)
         self._ids = []
 
@@ -60,7 +58,7 @@ class KeywordsWidget(forms.MultiWidget):
 
         if hasattr(value, "select_related"):
             keywords = [a.keyword for a in value.select_related("keyword")]
-        elif value and isinstance(value, six.string_types):
+        elif value and isinstance(value, str):
             keyword_pks = value.split(",")
             keywords = Keyword.objects.all().filter(id__in=keyword_pks)
 
@@ -79,7 +77,7 @@ class KeywordsWidget(forms.MultiWidget):
         links = ""
         for keyword in Keyword.objects.all().order_by("title"):
             prefix = "+" if str(keyword.id) not in self._ids else "-"
-            links += ("<a href='#'>%s%s</a>" % (prefix, str(keyword)))
+            links += "<a href='#'>%s%s</a>" % (prefix, str(keyword))
         rendered += mark_safe("<p class='keywords-field'>%s</p>" % links)
         return rendered
 
@@ -93,12 +91,9 @@ class KeywordsWidget(forms.MultiWidget):
 
 class ThreadedCommentForm(CommentForm, Html5Mixin):
 
-    name = forms.CharField(label=_("Name"), help_text=_("required"),
-                           max_length=50)
-    email = forms.EmailField(label=_("Email"),
-                             help_text=_("required (not published)"))
-    url = forms.URLField(label=_("Website"), help_text=_("optional"),
-                         required=False)
+    name = forms.CharField(label=_("Name"), help_text=_("required"), max_length=50)
+    email = forms.EmailField(label=_("Email"), help_text=_("required (not published)"))
+    url = forms.URLField(label=_("Website"), help_text=_("optional"), required=False)
 
     # These are used to get/set prepopulated fields via cookies.
     cookie_fields = ("name", "email", "url")
@@ -161,13 +156,16 @@ class ThreadedCommentForm(CommentForm, Html5Mixin):
             "replied_to_id": comment.replied_to_id,
         }
         for duplicate in self.get_comment_model().objects.filter(**lookup):
-            if (duplicate.submit_date.date() == comment.submit_date.date() and
-                    duplicate.comment == comment.comment):
+            if (
+                duplicate.submit_date.date() == comment.submit_date.date()
+                and duplicate.comment == comment.comment
+            ):
                 return duplicate
 
         comment.save()
-        comment_was_posted.send(sender=comment.__class__, comment=comment,
-                                request=request)
+        comment_was_posted.send(
+            sender=comment.__class__, comment=comment, request=request
+        )
         notify_emails = split_addresses(settings.COMMENTS_NOTIFICATION_EMAILS)
         if notify_emails:
             subject = ugettext("New comment for: ") + str(obj)
@@ -177,9 +175,13 @@ class ThreadedCommentForm(CommentForm, Html5Mixin):
                 "request": request,
                 "obj": obj,
             }
-            send_mail_template(subject, "email/comment_notification",
-                               settings.DEFAULT_FROM_EMAIL, notify_emails,
-                               context)
+            send_mail_template(
+                subject,
+                "email/comment_notification",
+                settings.DEFAULT_FROM_EMAIL,
+                notify_emails,
+                context,
+            )
         return comment
 
 
@@ -188,9 +190,12 @@ class RatingForm(CommentSecurityForm):
     Form for a rating. Subclasses ``CommentSecurityForm`` to make use
     of its easy setup for generic relations.
     """
-    value = forms.ChoiceField(label="", widget=forms.RadioSelect,
-                              choices=list(zip(
-                                             *(settings.RATINGS_RANGE,) * 2)))
+
+    value = forms.ChoiceField(
+        label="",
+        widget=forms.RadioSelect,
+        choices=list(zip(*(settings.RATINGS_RANGE,) * 2)),
+    )
 
     def __init__(self, request, *args, **kwargs):
         self.request = request
@@ -198,7 +203,7 @@ class RatingForm(CommentSecurityForm):
         if request and is_authenticated(request.user):
             current = self.rating_manager.filter(user=request.user).first()
             if current:
-                self.initial['value'] = current.value
+                self.initial["value"] = current.value
 
     @property
     def rating_manager(self):
@@ -230,8 +235,9 @@ class RatingForm(CommentSecurityForm):
         manager = self.rating_manager
 
         if is_authenticated(user):
-            rating_instance, created = manager.get_or_create(user=user,
-                defaults={'value': rating_value})
+            rating_instance, created = manager.get_or_create(
+                user=user, defaults={"value": rating_value}
+            )
             if not created:
                 if rating_instance.value == int(rating_value):
                     # User submitted the same rating as previously,

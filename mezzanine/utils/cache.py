@@ -1,8 +1,8 @@
+from functools import lru_cache
 from hashlib import md5
 from time import time
 
 from django.core.cache import cache
-from django.utils.lru_cache import lru_cache
 from django.utils.cache import _i18n_cache_key_suffix
 
 from mezzanine.conf import settings
@@ -63,11 +63,17 @@ def cache_installed():
     """
     has_key = bool(getattr(settings, "NEVERCACHE_KEY", ""))
 
-    return (has_key and settings.CACHES and not settings.TESTING and
-            middlewares_or_subclasses_installed([
+    return (
+        has_key
+        and settings.CACHES
+        and not settings.TESTING
+        and middlewares_or_subclasses_installed(
+            [
                 "mezzanine.core.middleware.UpdateCacheMiddleware",
                 "mezzanine.core.middleware.FetchFromCacheMiddleware",
-            ]))
+            ]
+        )
+    )
 
 
 def cache_key_prefix(request):

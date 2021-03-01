@@ -2,7 +2,6 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.db import models
 from django.template.defaultfilters import truncatewords_html
 from django.utils.translation import ugettext, ugettext_lazy as _
-from django.utils.encoding import python_2_unicode_compatible
 from django.utils.html import format_html
 
 from django_comments.models import Comment
@@ -26,8 +25,13 @@ class ThreadedComment(Comment):
     """
 
     by_author = models.BooleanField(_("By the blog author"), default=False)
-    replied_to = models.ForeignKey("self", on_delete=models.CASCADE, null=True,
-                                    editable=False, related_name="comments")
+    replied_to = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        null=True,
+        editable=False,
+        related_name="comments",
+    )
     rating = RatingField(verbose_name=_("Rating"))
 
     objects = CommentManager()
@@ -60,20 +64,27 @@ class ThreadedComment(Comment):
 
     def intro(self):
         return truncatewords_html(self.comment, 20)
+
     intro.short_description = _("Comment")
 
     def avatar_link(self):
         from mezzanine.core.templatetags.mezzanine_tags import gravatar_url
+
         return format_html(
             "<a href='mailto:{}'><img style='vertical-align:middle; "
             "margin-right:3px;' src='{}' />{}</a>",
-            self.user_email, gravatar_url(self.email), self.user_name
+            self.user_email,
+            gravatar_url(self.email),
+            self.user_name,
         )
+
     avatar_link.short_description = _("User")
 
     def admin_link(self):
-        return format_html("<a href='{}'>{}</a>", self.get_absolute_url(),
-                           ugettext("View on site"))
+        return format_html(
+            "<a href='{}'>{}</a>", self.get_absolute_url(), ugettext("View on site")
+        )
+
     admin_link.short_description = ""
 
     # Exists for backward compatibility when the gravatar_url template
@@ -96,16 +107,20 @@ class Keyword(Slugged):
         verbose_name_plural = _("Keywords")
 
 
-@python_2_unicode_compatible
 class AssignedKeyword(Orderable):
     """
     A ``Keyword`` assigned to a model instance.
     """
 
-    keyword = models.ForeignKey("Keyword", on_delete=models.CASCADE,
-                        verbose_name=_("Keyword"), related_name="assignments")
-    content_type = models.ForeignKey("contenttypes.ContentType",
-                                    on_delete=models.CASCADE)
+    keyword = models.ForeignKey(
+        "Keyword",
+        on_delete=models.CASCADE,
+        verbose_name=_("Keyword"),
+        related_name="assignments",
+    )
+    content_type = models.ForeignKey(
+        "contenttypes.ContentType", on_delete=models.CASCADE
+    )
     object_pk = models.IntegerField()
     content_object = GenericForeignKey("content_type", "object_pk")
 
@@ -122,14 +137,19 @@ class Rating(models.Model):
     """
 
     value = models.IntegerField(_("Value"))
-    rating_date = models.DateTimeField(_("Rating date"),
-        auto_now_add=True, null=True)
-    content_type = models.ForeignKey("contenttypes.ContentType",
-                                    on_delete=models.CASCADE)
+    rating_date = models.DateTimeField(_("Rating date"), auto_now_add=True, null=True)
+    content_type = models.ForeignKey(
+        "contenttypes.ContentType", on_delete=models.CASCADE
+    )
     object_pk = models.IntegerField()
     content_object = GenericForeignKey("content_type", "object_pk")
-    user = models.ForeignKey(get_user_model_name(), on_delete=models.CASCADE,
-        verbose_name=_("Rater"), null=True, related_name="%(class)ss")
+    user = models.ForeignKey(
+        get_user_model_name(),
+        on_delete=models.CASCADE,
+        verbose_name=_("Rater"),
+        null=True,
+        related_name="%(class)ss",
+    )
 
     class Meta:
         verbose_name = _("Rating")
@@ -141,6 +161,7 @@ class Rating(models.Model):
         """
         valid = map(str, settings.RATINGS_RANGE)
         if str(self.value) not in valid:
-            raise ValueError("Invalid rating. %s is not in %s" % (self.value,
-                ", ".join(valid)))
+            raise ValueError(
+                "Invalid rating. %s is not in %s" % (self.value, ", ".join(valid))
+            )
         super(Rating, self).save(*args, **kwargs)
